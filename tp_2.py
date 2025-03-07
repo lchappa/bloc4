@@ -30,7 +30,7 @@ composer = algorand.new_group()
 
 composer.add_asset_opt_in(au.AssetOptInParams(
     sender=bob.address,
-    asset_id = 1010
+    asset_id = 1005
 ))
 
 composer.add_payment(au.PaymentParams(
@@ -42,7 +42,7 @@ composer.add_payment(au.PaymentParams(
 
 composer.add_asset_transfer(au.AssetTransferParams(
     sender=alice.address,
-    asset_id=1010,
+    asset_id=1005,
     amount=1,
     receiver=bob.address
 ))
