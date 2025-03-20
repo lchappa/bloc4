@@ -1,0 +1,377 @@
+#pragma version 10
+#pragma typetrack false
+
+// app.Game.__algopy_entrypoint_with_init() -> uint64:
+main:
+    intcblock 1 0 10
+    bytecblock 0x151f7c75 "asset"
+    // app.py:32
+    // class Game(ARC4Contract):
+    txn NumAppArgs
+    bz main_bare_routing@9
+    pushbytess 0x1431f856 0xec476dbd 0x828f30d3 0x69f5c863 // method "register(string)(uint64,string,uint64)", method "fund_account(pay)uint64", method "buy_asset(byte[],uint64)void", method "admin_upsert_asset((string,string,uint64))void"
+    txna ApplicationArgs 0
+    match main_register_route@5 main_fund_account_route@6 main_buy_asset_route@7 main_admin_upsert_asset_route@8
+
+main_after_if_else@11:
+    // app.py:32
+    // class Game(ARC4Contract):
+    intc_1 // 0
+    return
+
+main_admin_upsert_asset_route@8:
+    // app.py:101
+    // @arc4.abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // app.py:32
+    // class Game(ARC4Contract):
+    txna ApplicationArgs 1
+    // app.py:101
+    // @arc4.abimethod
+    callsub admin_upsert_asset
+    intc_0 // 1
+    return
+
+main_buy_asset_route@7:
+    // app.py:76
+    // @arc4.abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // app.py:32
+    // class Game(ARC4Contract):
+    txna ApplicationArgs 1
+    extract 2 0
+    txna ApplicationArgs 2
+    btoi
+    // app.py:76
+    // @arc4.abimethod
+    callsub buy_asset
+    intc_0 // 1
+    return
+
+main_fund_account_route@6:
+    // app.py:56
+    // @arc4.abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // app.py:32
+    // class Game(ARC4Contract):
+    txn GroupIndex
+    intc_0 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_0 // pay
+    ==
+    assert // transaction type is pay
+    // app.py:56
+    // @arc4.abimethod
+    callsub fund_account
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_register_route@5:
+    // app.py:38
+    // @arc4.abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // app.py:32
+    // class Game(ARC4Contract):
+    txna ApplicationArgs 1
+    // app.py:38
+    // @arc4.abimethod
+    callsub register
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_bare_routing@9:
+    // app.py:32
+    // class Game(ARC4Contract):
+    txn OnCompletion
+    bnz main_after_if_else@11
+    txn ApplicationID
+    !
+    assert // can only call when creating
+    intc_0 // 1
+    return
+
+
+// app.Game.register(name: bytes) -> bytes:
+register:
+    // app.py:38-39
+    // @arc4.abimethod
+    // def register(self, name: arc4.String) -> User:
+    proto 1 1
+    // app.py:48
+    // if Txn.sender not in self.user:
+    txn Sender
+    box_len
+    bury 1
+    bnz register_after_if_else@2
+    // app.py:50
+    // registered_at=arc4.UInt64(Global.latest_timestamp),
+    global LatestTimestamp
+    itob
+    // app.py:49-53
+    // self.user[Txn.sender] = User(
+    //     registered_at=arc4.UInt64(Global.latest_timestamp),
+    //     name=name,
+    //     balance=arc4.UInt64(0),
+    // )
+    pushbytes 0x0012
+    concat
+    // app.py:52
+    // balance=arc4.UInt64(0),
+    pushbytes 0x0000000000000000
+    // app.py:49-53
+    // self.user[Txn.sender] = User(
+    //     registered_at=arc4.UInt64(Global.latest_timestamp),
+    //     name=name,
+    //     balance=arc4.UInt64(0),
+    // )
+    concat
+    frame_dig -1
+    concat
+    // app.py:49
+    // self.user[Txn.sender] = User(
+    txn Sender
+    // app.py:49-53
+    // self.user[Txn.sender] = User(
+    //     registered_at=arc4.UInt64(Global.latest_timestamp),
+    //     name=name,
+    //     balance=arc4.UInt64(0),
+    // )
+    dup
+    box_del
+    pop
+    swap
+    box_put
+
+register_after_if_else@2:
+    // app.py:54
+    // return self.user[Txn.sender]
+    txn Sender
+    box_get
+    assert // check self.user entry exists
+    retsub
+
+
+// app.Game.fund_account(payment: uint64) -> bytes:
+fund_account:
+    // app.py:56-57
+    // @arc4.abimethod
+    // def fund_account(self, payment: gtxn.PaymentTransaction) -> arc4.UInt64:
+    proto 1 1
+    // app.py:67
+    // payment.receiver == Global.current_application_address
+    frame_dig -1
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    // app.py:66-68
+    // assert (
+    //     payment.receiver == Global.current_application_address
+    // ), "Payment receiver must be the application address"
+    assert // Payment receiver must be the application address
+    // app.py:69
+    // assert payment.sender in self.user, "User must be registered"
+    frame_dig -1
+    gtxns Sender
+    dup
+    box_len
+    bury 1
+    assert // User must be registered
+    // app.py:72
+    // self.user[payment.sender].balance.native + payment.amount
+    dup
+    box_get
+    assert // check self.user entry exists
+    intc_2 // 10
+    extract_uint64
+    frame_dig -1
+    gtxns Amount
+    +
+    // app.py:71-73
+    // self.user[payment.sender].balance = arc4.UInt64(
+    //     self.user[payment.sender].balance.native + payment.amount
+    // )
+    itob
+    // app.py:71
+    // self.user[payment.sender].balance = arc4.UInt64(
+    dig 1
+    box_get
+    assert // check self.user entry exists
+    // app.py:71-73
+    // self.user[payment.sender].balance = arc4.UInt64(
+    //     self.user[payment.sender].balance.native + payment.amount
+    // )
+    swap
+    replace2 10
+    dig 1
+    box_del
+    pop
+    dig 1
+    swap
+    box_put
+    // app.py:74
+    // return self.user[payment.sender].balance
+    box_get
+    assert // check self.user entry exists
+    extract 10 8 // on error: Index access is out of bounds
+    retsub
+
+
+// app.Game.buy_asset(asset_id: bytes, quantity: uint64) -> void:
+buy_asset:
+    // app.py:76-77
+    // @arc4.abimethod
+    // def buy_asset(self, asset_id: Hash, quantity: Quantity) -> None:
+    proto 2 0
+    // app.py:84
+    // assert Txn.sender in self.user, "User must be registered"
+    txn Sender
+    box_len
+    bury 1
+    assert // User must be registered
+    // app.py:85
+    // assert asset_id in self.asset, "Invalid asset ID"
+    bytec_1 // "asset"
+    frame_dig -2
+    concat
+    dup
+    box_len
+    bury 1
+    assert // Invalid asset ID
+    // app.py:87
+    // user_balance = self.user[Txn.sender].balance.native
+    txn Sender
+    box_get
+    assert // check self.user entry exists
+    intc_2 // 10
+    extract_uint64
+    // app.py:88
+    // asset_price = self.asset[asset_id].price.native
+    swap
+    box_get
+    assert // check self.asset entry exists
+    pushint 4 // 4
+    extract_uint64
+    // app.py:89
+    // assert user_balance >= (total := asset_price * quantity), "Insufficient funds"
+    frame_dig -1
+    *
+    dup2
+    >=
+    assert // Insufficient funds
+    // app.py:91-92
+    // # Update user balance
+    // self.user[Txn.sender].balance = arc4.UInt64(user_balance - total)
+    -
+    itob
+    txn Sender
+    dup
+    box_get
+    assert // check self.user entry exists
+    uncover 2
+    replace2 10
+    dig 1
+    box_del
+    pop
+    box_put
+    // app.py:94-95
+    // # Insert or update user-asset box
+    // user_asset_id = op.sha256(Txn.sender.bytes + asset_id)
+    txn Sender
+    frame_dig -2
+    concat
+    sha256
+    // app.py:96
+    // if user_asset_id in self.user_asset:
+    pushbytes "user_asset"
+    swap
+    concat
+    dup
+    box_len
+    bury 1
+    bz buy_asset_else_body@2
+    // app.py:97
+    // self.user_asset[user_asset_id] += quantity
+    dup
+    box_get
+    swap
+    btoi
+    swap
+    assert // check self.user_asset entry exists
+    frame_dig -1
+    +
+    itob
+    box_put
+    retsub
+
+buy_asset_else_body@2:
+    // app.py:99
+    // self.user_asset[user_asset_id] = quantity
+    frame_dig -1
+    itob
+    box_put
+    retsub
+
+
+// app.Game.admin_upsert_asset(asset: bytes) -> void:
+admin_upsert_asset:
+    // app.py:101-102
+    // @arc4.abimethod
+    // def admin_upsert_asset(self, asset: GameAsset) -> None:
+    proto 1 0
+    // app.py:109
+    // Txn.sender == Global.creator_address
+    txn Sender
+    global CreatorAddress
+    ==
+    // app.py:108-110
+    // assert (
+    //     Txn.sender == Global.creator_address
+    // ), "Only the creator can call this method"
+    assert // Only the creator can call this method
+    // app.py:111
+    // self.asset[op.sha256(asset.name.bytes)] = asset.copy()
+    frame_dig -1
+    intc_1 // 0
+    extract_uint16
+    frame_dig -1
+    pushint 2 // 2
+    extract_uint16
+    frame_dig -1
+    cover 2
+    substring3
+    sha256
+    bytec_1 // "asset"
+    swap
+    concat
+    dup
+    box_del
+    pop
+    frame_dig -1
+    box_put
+    retsub
